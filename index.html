@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <script src="./index.js"></script>
+  <link rel="stylesheet" href="./styles.css">
+  <title>AftaClass</title>
+</head>
+<body>
+  <div id="app">
+    <!-- Header & Naigation  -->
+     <div id="navbar">
+      <p>AftaClass<span>.</span></p>
+      <div>
+        <i class="fa-solid fa-cart-shopping"></i>
+      </div>
+      </div>
+
+      <!-- Hero Section -->
+       <div id="hero-section">
+        <div class="hero-header">
+          <div>
+          <h2>Welcome to AftaClass</h2>
+          <p>Where you get easy access great class resource after school , to give you the edge you desire to be the best</p>
+          </div>
+          <!-- this is to take them to the course section  -->
+          <button>Book a Class</button>
+        </div>
+       </div>
+
+    <!-- Course search -->
+    <section id="course-section" aria-label="Find a course">
+      <form class="course-toolbar" role="search" @submit.prevent>
+        <div class="course-search">
+          <label for="course-search-input">Search courses</label>
+          <div class="course-search-control">
+            <input
+              id="course-search-input"
+              type="search"
+              name="q"
+              v-model="searchQuery"
+              placeholder="Search for a course..."
+            >
+            <button type="submit" aria-label="Search courses">
+              <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+            </button>
+          </div>
+        </div>
+        <div class="course-filter">
+          <label for="subject-filter">Subject</label>
+          <select id="subject-filter" name="subject" v-model="selectedSubject">
+            <option value="">All subjects</option>
+            <option value="Mathematics">Mathematics</option>
+            <option value="Science">Science</option>
+            <option value="English">English</option>
+            <option value="History">History</option>
+            <option value="Computer Science">Computer Science</option>
+          </select>
+        </div>
+        <div class="course-filter">
+          <label for="price-filter">Maximum price</label>
+          <select id="price-filter" name="price" v-model.number="maxPrice">
+            <option :value="100">Any price (up to {{ formatPrice(100) }})</option>
+            <option :value="25">Up to {{ formatPrice(25) }}</option>
+            <option :value="35">Up to {{ formatPrice(35) }}</option>
+            <option :value="50">Up to {{ formatPrice(50) }}</option>
+          </select>
+        </div>
+      </form>
+      <section class="course-results" aria-labelledby="course-results-title">
+        <h2 id="course-results-title">Available courses</h2>
+        <div v-if="filteredCourses.length" class="course-grid">
+          <article
+            v-for="course in filteredCourses"
+            :key="course.id"
+            class="course-card"
+          >
+            <p class="course-subject">{{ course.subject }}</p>
+            <h3>{{ course.title }}</h3>
+            <p class="course-description">{{ course.description }}</p>
+            <dl class="course-details">
+              <div>
+                <dt>Instructor</dt>
+                <dd>{{ course.instructor }}</dd>
+              </div>
+              <div>
+                <dt>Duration</dt>
+                <dd>{{ course.duration }}</dd>
+              </div>
+              <div>
+                <dt>Price</dt>
+                <dd>{{ formatPrice(course.price) }}</dd>
+              </div>
+            </dl>
+          </article>
+        </div>
+        <p v-else class="no-courses">No courses match your search and filters.</p>
+      </section>
+    </section>
+  </div>
+  <script>
+    const { createApp } = Vue;
+
+    createApp({
+      data() {
+        return {
+          courses: window.courseData,
+          searchQuery: "",
+          selectedSubject: "",
+          maxPrice: 100
+        };
+      },
+      computed: {
+        filteredCourses() {
+          const query = this.searchQuery.trim().toLowerCase();
+
+          return this.courses.filter((course) => {
+            const matchesSubject =
+              !this.selectedSubject || course.subject === this.selectedSubject;
+            const matchesPrice = course.price <= this.maxPrice;
+            const searchableDetails =
+              `${course.title} ${course.subject} ${course.description} ${course.instructor}`.toLowerCase();
+            const matchesQuery = !query || searchableDetails.includes(query);
+
+            return matchesSubject && matchesPrice && matchesQuery;
+          });
+        }
+      },
+      methods: {
+        formatPrice(amount) {
+          return new Intl.NumberFormat("en-MU", {
+            style: "currency",
+            currency: "MUR",
+            maximumFractionDigits: 0
+          }).format(amount);
+        }
+      },
+      watch: {}
+    }).mount("#app");
+  </script>
+</body>
+</html>
