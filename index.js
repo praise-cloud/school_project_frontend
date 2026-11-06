@@ -1,56 +1,169 @@
-window.courseData = [
-  {
-    id: 1,
-    title: "Algebra Foundations",
-    subject: "Mathematics",
-    description: "Build confidence with equations, expressions, and core algebra skills.",
-    instructor: "Alex Morgan",
-    duration: "8 weeks",
-    price: 25
-  },
-  {
-    id: 2,
-    title: "Introduction to Biology",
-    subject: "Science",
-    description: "Explore cells, ecosystems, and the fundamentals of living things.",
-    instructor: "Jamie Patel",
-    duration: "6 weeks",
-    price: 35
-  },
-  {
-    id: 3,
-    title: "English Writing Workshop",
-    subject: "English",
-    description: "Practice clear writing, grammar, and thoughtful essay structure.",
-    instructor: "Taylor Reed",
-    duration: "5 weeks",
-    price: 30
-  },
-  {
-    id: 4,
-    title: "World History Essentials",
-    subject: "History",
-    description: "Connect key events and ideas that shaped the modern world.",
-    instructor: "Jordan Lee",
-    duration: "8 weeks",
-    price: 40
-  },
-  {
-    id: 5,
-    title: "Coding with JavaScript",
-    subject: "Computer Science",
-    description: "Learn programming fundamentals by building interactive projects.",
-    instructor: "Sam Rivera",
-    duration: "10 weeks",
-    price: 50
-  },
-  {
-    id: 6,
-    title: "Geometry and Problem Solving",
-    subject: "Mathematics",
-    description: "Understand shapes, angles, and practical geometry strategies.",
-    instructor: "Alex Morgan",
-    duration: "6 weeks",
-    price: 45
+const { createApp } = Vue
+const API_BASE_URL = window.location.port === '3002'
+  ? '/api'
+  : 'http://127.0.0.1:3002/api'
+
+function getCartId() {
+  let cartId = localStorage.getItem('aftaclass-cart-id')
+
+  if (!cartId) {
+    cartId = window.crypto && window.crypto.randomUUID
+      ? window.crypto.randomUUID()
+      : `cart-${Date.now()}-${Math.random().toString(36).slice(2)}`
+    localStorage.setItem('aftaclass-cart-id', cartId)
   }
-];
+
+  return cartId
+}
+
+createApp({
+  data() {
+    return {
+      page: 'home',
+      cartId: getCartId(),
+      lessons: [],
+      cartItems: [],
+      searchQuery: '',
+      selectedSubject: '',
+      maxPrice: 100,
+      userName: '',
+      lastOrder: { userName: '', lessons: [] },
+      loading: true,
+      checkingOut: false,
+      errorMessage: ''
+    }
+  },
+  computed: {
+    subjects() {
+      return [...new Set(this.lessons.map((lesson) => lesson.subject))]
+    },
+    filteredLessons() {
+      const query = this.searchQuery.trim().toLowerCase()
+
+      return this.lessons.filter((lesson) => {
+        const matchesSubject = !this.selectedSubject || lesson.subject === this.selectedSubject
+        const matchesPrice = lesson.price <= this.maxPrice
+        const searchableDetails =
+          `${lesson.title} ${lesson.subject} ${lesson.description} ${lesson.instructor}`.toLowerCase()
+
+        return matchesSubject && matchesPrice && (!query || searchableDetails.includes(query))
+      })
+    },
+    cartTotal() {
+      return this.cartItems.reduce((total, lesson) => total + lesson.price, 0)
+    }
+  },
+  async mounted() {
+    await Promise.all([this.loadLessons(), this.loadCart()])
+  },
+  methods: {
+    async request(url, options = {}) {
+      const response = await fetch(`${API_BASE_URL}${url.replace(/^\/api/, '')}`, {
+        ...options,
+        headers: {
+          ...(options.body ? { 'Content-Type': 'application/json' } : {}),
+          ...options.headers
+        }
+      })
+      const result = await response.json()
+
+      if (!response.ok) {
+        throw new Error(result.error || 'The request could not be completed.')
+      }
+
+      return result
+    },
+    async loadLessons() {
+      this.loading = true
+      this.errorMessage = ''
+      try {
+        this.lessons = await this.request('/api/lessons')
+      } catch (error) {
+        this.errorMessage = error.message
+      } finally {
+        this.loading = false
+      }
+    },
+    async loadCart() {
+      try {
+        const result = await this.request(`/api/cart/${encodeURIComponent(this.cartId)}`)
+        this.cartItems = result.items
+      } catch (error) {
+        this.errorMessage = error.message
+      }
+    },
+    async addToCart(lessonId) {
+      this.errorMessage = ''
+      try {
+        const result = await this.request(`/api/cart/${encodeURIComponent(this.cartId)}/items`, {
+          method: 'POST',
+          body: JSON.stringify({ lessonId })
+        })
+        this.cartItems = result.items
+      } catch (error) {
+        this.errorMessage = error.message
+        await this.loadLessons()
+      }
+    },
+    async removeFromCart(lessonId) {
+      this.errorMessage = ''
+      try {
+        const result = await this.request(
+          `/api/cart/${encodeURIComponent(this.cartId)}/items/${lessonId}`,
+          { method: 'DELETE' }
+        )
+        this.cartItems = result.items
+      } catch (error) {
+        this.errorMessage = error.message
+      }
+    },
+    async showCart() {
+      this.errorMessage = ''
+      await this.loadCart()
+      this.page = 'cart'
+    },
+    async checkout() {
+      this.errorMessage = ''
+      this.checkingOut = true
+
+      try {
+        const order = await this.request(`/api/checkout/${encodeURIComponent(this.cartId)}`, {
+          method: 'POST',
+          body: JSON.stringify({ userName: this.userName })
+        })
+        this.lastOrder = order
+        this.cartItems = []
+        order.lessons.forEach((bookedLesson) => {
+          const lesson = this.lessons.find((item) => item.id === bookedLesson.id)
+          if (lesson) lesson.availableSeats = bookedLesson.remainingSeats
+        })
+        this.page = 'success'
+      } catch (error) {
+        this.errorMessage = error.message
+        await Promise.all([this.loadCart(), this.loadLessons()])
+      } finally {
+        this.checkingOut = false
+      }
+    },
+    isInCart(lessonId) {
+      return this.cartItems.some((lesson) => lesson.id === lessonId)
+    },
+    formatPrice(amount) {
+      return new Intl.NumberFormat('en-MU', {
+        style: 'currency',
+        currency: 'MUR',
+        maximumFractionDigits: 0
+      }).format(amount)
+    },
+    async scrollToCourses() {
+      if (this.page !== 'home') this.goHome()
+      await Vue.nextTick()
+      const courseSection = document.getElementById('course-section')
+      if (courseSection) courseSection.scrollIntoView({ behavior: 'smooth' })
+    },
+    goHome() {
+      this.errorMessage = ''
+      this.page = 'home'
+    }
+  }
+}).mount('#app')

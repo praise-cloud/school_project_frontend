@@ -3,143 +3,237 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+  <meta name="theme-color" content="#f6f7f4">
+  <meta name="description" content="Find your next after-school class with AftaClass.">
+  <link rel="icon" type="image/svg+xml" href="./favicon.svg">
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js" defer></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-  <script src="./index.js"></script>
   <link rel="stylesheet" href="./styles.css">
-  <title>AftaClass</title>
+  <script src="./index.js" defer></script>
+  <title>AftaClass — Learn beyond the classroom</title>
 </head>
 <body>
   <div id="app">
-    <!-- Header & Naigation  -->
-     <div id="navbar">
-      <p>AftaClass<span>.</span></p>
-      <div>
-        <i class="fa-solid fa-cart-shopping"></i>
-      </div>
-      </div>
+    <header class="site-header">
+      <a class="brand" href="#" @click.prevent="goHome" aria-label="AftaClass home">
+        <span class="brand-mark"><i class="fa-solid fa-shapes" aria-hidden="true"></i></span>
+        <span>AftaClass<span class="brand-period">.</span></span>
+      </a>
+      <nav class="header-actions" aria-label="Main navigation">
+        <button class="nav-link" type="button" @click="goHome(); scrollToCourses()">Explore classes</button>
+        <button class="cart-button" type="button" @click="showCart" aria-label="Open cart">
+          <i class="fa-solid fa-bag-shopping" aria-hidden="true"></i>
+          <span>My cart</span>
+          <span class="cart-count">{{ cartItems.length }}</span>
+        </button>
+      </nav>
+    </header>
 
-      <!-- Hero Section -->
-       <div id="hero-section">
-        <div class="hero-header">
-          <div>
-          <h2>Welcome to AftaClass</h2>
-          <p>Where you get easy access great class resource after school , to give you the edge you desire to be the best</p>
+    <main>
+      <template v-if="page === 'home'">
+        <section id="hero-section" class="hero">
+          <div class="hero-copy">
+            <p class="eyebrow"><span class="eyebrow-dot"></span> MAKE AFTER SCHOOL COUNT</p>
+            <h1>Big goals start with <span>one great class.</span></h1>
+            <p class="hero-description">Discover small-group lessons that make learning click. Find your subject, meet your tutor and take the next step with confidence.</p>
+            <div class="hero-actions">
+              <button class="button button-primary" type="button" @click="scrollToCourses">
+                Find your class <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
+              </button>
+              <span class="hero-note"><i class="fa-solid fa-circle-check" aria-hidden="true"></i> Learn at your own pace</span>
+            </div>
+            <div class="hero-stats" aria-label="Class benefits">
+              <div><strong>Small groups</strong><span>More room to grow</span></div>
+              <div><strong>Great tutors</strong><span>Guidance that gets you</span></div>
+              <div><strong>Real progress</strong><span>One lesson at a time</span></div>
+            </div>
           </div>
-          <!-- this is to take them to the course section  -->
-          <button>Book a Class</button>
-        </div>
-       </div>
+          <aside class="hero-feature" aria-label="Featured lesson">
+            <div class="feature-topline"><span class="feature-label">A little inspiration</span><span class="feature-sparkle"><i class="fa-solid fa-sparkles" aria-hidden="true"></i></span></div>
+            <div class="feature-art" aria-hidden="true">
+              <span class="orbit orbit-one"></span><span class="orbit orbit-two"></span>
+              <span class="feature-book"><i class="fa-solid fa-book-open"></i></span>
+              <span class="feature-star star-one"><i class="fa-solid fa-star"></i></span>
+              <span class="feature-star star-two"><i class="fa-solid fa-plus"></i></span>
+            </div>
+            <p class="feature-kicker">YOUR NEXT CHAPTER</p>
+            <h2>Curiosity looks good on you.</h2>
+            <p>Pick a subject you love. We’ll help you find a class that keeps you moving forward.</p>
+            <button type="button" class="feature-link" @click="scrollToCourses">Browse all lessons <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></button>
+          </aside>
+        </section>
 
-    <!-- Course search -->
-    <section id="course-section" aria-label="Find a course">
-      <form class="course-toolbar" role="search" @submit.prevent>
-        <div class="course-search">
-          <label for="course-search-input">Search courses</label>
-          <div class="course-search-control">
-            <input
-              id="course-search-input"
-              type="search"
-              name="q"
-              v-model="searchQuery"
-              placeholder="Search for a course..."
-            >
-            <button type="submit" aria-label="Search courses">
-              <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+        <section id="course-section" class="catalog" aria-label="Find a lesson">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">THE CLASSROOM, REIMAGINED</p>
+              <h2>Find your next favourite class</h2>
+              <p class="section-description">A great place to start learning something new.</p>
+            </div>
+            <span class="result-count">{{ filteredLessons.length }} {{ filteredLessons.length === 1 ? 'class' : 'classes' }}</span>
+          </div>
+
+          <form class="course-toolbar" role="search" @submit.prevent>
+            <div class="course-search">
+              <label for="course-search-input">Search classes</label>
+              <div class="course-search-control">
+                <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+                <input id="course-search-input" type="search" v-model="searchQuery" placeholder="Try “biology” or a tutor name">
+              </div>
+            </div>
+            <div class="course-filter">
+              <label for="subject-filter">Subject</label>
+              <select id="subject-filter" v-model="selectedSubject">
+                <option value="">All subjects</option>
+                <option v-for="subject in subjects" :key="subject" :value="subject">{{ subject }}</option>
+              </select>
+            </div>
+            <div class="course-filter price-filter">
+              <label for="price-filter">Price range</label>
+              <select id="price-filter" v-model.number="maxPrice">
+                <option :value="100">Any price</option>
+                <option :value="25">Up to {{ formatPrice(25) }}</option>
+                <option :value="35">Up to {{ formatPrice(35) }}</option>
+                <option :value="50">Up to {{ formatPrice(50) }}</option>
+              </select>
+            </div>
+          </form>
+
+          <section class="course-results" aria-labelledby="course-results-title">
+            <div class="results-heading">
+              <h2 id="course-results-title">Available lessons</h2>
+              <span v-if="!loading && !errorMessage" class="results-live"><span></span> Enrolment open</span>
+            </div>
+            <div v-if="errorMessage" class="feedback error-message" role="alert">
+              <i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i>
+              <span>{{ errorMessage }}</span>
+              <button class="button button-small" type="button" @click="loadLessons">Try again</button>
+            </div>
+            <p v-if="loading" class="feedback loading-message"><span class="loading-spinner" aria-hidden="true"></span> Finding your classes…</p>
+            <div v-else-if="filteredLessons.length" class="course-grid">
+              <article v-for="(lesson, index) in filteredLessons" :key="lesson.id" class="course-card" :class="`course-card-${index % 4}`">
+                <img
+                  v-if="lesson.imageUrl"
+                  class="course-image"
+                  :src="lesson.imageUrl"
+                  :alt="`${lesson.subject}: ${lesson.title}`"
+                  loading="lazy"
+                  decoding="async"
+                >
+                <div class="card-topline">
+                  <span class="course-subject"><i class="fa-solid fa-bookmark" aria-hidden="true"></i> {{ lesson.subject }}</span>
+                  <span class="seat-status" :class="{ 'seat-status-low': lesson.availableSeats < 3, 'seat-status-full': lesson.availableSeats < 1 }">
+                    {{ lesson.availableSeats < 1 ? 'Full' : `${lesson.availableSeats} seats left` }}
+                  </span>
+                </div>
+                <h3>{{ lesson.title }}</h3>
+                <p class="course-description">{{ lesson.description }}</p>
+                <div class="course-meta">
+                  <span><i class="fa-regular fa-user" aria-hidden="true"></i> {{ lesson.instructor }}</span>
+                  <span><i class="fa-regular fa-clock" aria-hidden="true"></i> {{ lesson.duration }}</span>
+                </div>
+                <div class="card-footer">
+                  <div class="course-price"><span>From</span><strong>{{ formatPrice(lesson.price) }}</strong></div>
+                  <button class="button button-card" type="button" :disabled="lesson.availableSeats < 1 || isInCart(lesson.id)" @click="addToCart(lesson.id)">
+                    {{ lesson.availableSeats < 1 ? 'Fully booked' : (isInCart(lesson.id) ? 'Added' : 'Add to cart') }}
+                  </button>
+                </div>
+              </article>
+            </div>
+            <div v-else-if="!loading && !errorMessage" class="empty-state">
+              <span><i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i></span>
+              <h3>No classes found</h3>
+              <p>Try a different search or adjust your filters.</p>
+            </div>
+          </section>
+        </section>
+      </template>
+
+      <section v-else-if="page === 'cart'" class="checkout-panel">
+        <button class="back-link" type="button" @click="goHome"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Back to classes</button>
+        <p class="eyebrow">YOUR NEXT STEP</p>
+        <h1>Your cart</h1>
+        <p class="panel-intro">Your selected lessons, all in one place.</p>
+        <p v-if="errorMessage" class="feedback error-message" role="alert">{{ errorMessage }}</p>
+        <div v-if="!cartItems.length" class="empty-state compact-empty">
+          <span><i class="fa-solid fa-bag-shopping" aria-hidden="true"></i></span>
+          <h3>Your cart is waiting</h3>
+          <p>Browse the classes and add one that sparks your interest.</p>
+        </div>
+        <ul v-else class="cart-list">
+          <li v-for="lesson in cartItems" :key="lesson.id" class="cart-item">
+            <div class="cart-item-icon"><i class="fa-solid fa-book-open" aria-hidden="true"></i></div>
+            <div class="cart-item-details">
+              <span class="course-subject">{{ lesson.subject }}</span>
+              <h2>{{ lesson.title }}</h2>
+              <p>{{ lesson.instructor }} <span>·</span> {{ lesson.duration }}</p>
+            </div>
+            <strong class="cart-item-price">{{ formatPrice(lesson.price) }}</strong>
+            <button class="remove-button" type="button" @click="removeFromCart(lesson.id)" :aria-label="`Remove ${lesson.title} from cart`"><i class="fa-regular fa-trash-can" aria-hidden="true"></i></button>
+          </li>
+        </ul>
+        <div v-if="cartItems.length" class="cart-summary">
+          <span>Estimated total <strong>{{ formatPrice(cartTotal) }}</strong></span>
+          <p>Secure your place in just a few more steps.</p>
+        </div>
+        <div class="page-actions">
+          <button type="button" class="button button-secondary" @click="goHome">Continue browsing</button>
+          <button type="button" class="button button-primary" :disabled="!cartItems.length" @click="page = 'checkout'; errorMessage = ''">Continue to checkout <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></button>
+        </div>
+      </section>
+
+      <section v-else-if="page === 'checkout'" class="checkout-panel">
+        <button class="back-link" type="button" @click="page = 'cart'"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Back to cart</button>
+        <p class="eyebrow">ALMOST THERE</p>
+        <h1>Complete your booking</h1>
+        <p class="panel-intro">Add your name and we’ll save your place.</p>
+        <p v-if="errorMessage" class="feedback error-message" role="alert">{{ errorMessage }}</p>
+        <ul v-if="cartItems.length" class="cart-list checkout-list">
+          <li v-for="lesson in cartItems" :key="lesson.id" class="cart-item">
+            <div class="cart-item-icon"><i class="fa-solid fa-book-open" aria-hidden="true"></i></div>
+            <div class="cart-item-details">
+              <span class="course-subject">{{ lesson.subject }}</span>
+              <h2>{{ lesson.title }}</h2>
+              <p>{{ lesson.instructor }} <span>·</span> {{ lesson.duration }}</p>
+            </div>
+            <strong class="cart-item-price">{{ formatPrice(lesson.price) }}</strong>
+            <button class="remove-button" type="button" @click="removeFromCart(lesson.id)" :aria-label="`Remove ${lesson.title} from cart`"><i class="fa-regular fa-trash-can" aria-hidden="true"></i></button>
+          </li>
+        </ul>
+        <p v-else class="feedback">Your cart is empty. Add a lesson before checking out.</p>
+        <form class="checkout-form" @submit.prevent="checkout">
+          <label for="user-name">Your name</label>
+          <input id="user-name" v-model.trim="userName" name="userName" autocomplete="name" placeholder="Enter your full name" required>
+          <div class="page-actions">
+            <span class="checkout-total">Total <strong>{{ formatPrice(cartTotal) }}</strong></span>
+            <button class="button button-primary" type="submit" :disabled="!cartItems.length || checkingOut">
+              {{ checkingOut ? 'Booking…' : 'Confirm booking' }} <i v-if="!checkingOut" class="fa-solid fa-arrow-right" aria-hidden="true"></i>
             </button>
           </div>
-        </div>
-        <div class="course-filter">
-          <label for="subject-filter">Subject</label>
-          <select id="subject-filter" name="subject" v-model="selectedSubject">
-            <option value="">All subjects</option>
-            <option value="Mathematics">Mathematics</option>
-            <option value="Science">Science</option>
-            <option value="English">English</option>
-            <option value="History">History</option>
-            <option value="Computer Science">Computer Science</option>
-          </select>
-        </div>
-        <div class="course-filter">
-          <label for="price-filter">Maximum price</label>
-          <select id="price-filter" name="price" v-model.number="maxPrice">
-            <option :value="100">Any price (up to {{ formatPrice(100) }})</option>
-            <option :value="25">Up to {{ formatPrice(25) }}</option>
-            <option :value="35">Up to {{ formatPrice(35) }}</option>
-            <option :value="50">Up to {{ formatPrice(50) }}</option>
-          </select>
-        </div>
-      </form>
-      <section class="course-results" aria-labelledby="course-results-title">
-        <h2 id="course-results-title">Available courses</h2>
-        <div v-if="filteredCourses.length" class="course-grid">
-          <article
-            v-for="course in filteredCourses"
-            :key="course.id"
-            class="course-card"
-          >
-            <p class="course-subject">{{ course.subject }}</p>
-            <h3>{{ course.title }}</h3>
-            <p class="course-description">{{ course.description }}</p>
-            <dl class="course-details">
-              <div>
-                <dt>Instructor</dt>
-                <dd>{{ course.instructor }}</dd>
-              </div>
-              <div>
-                <dt>Duration</dt>
-                <dd>{{ course.duration }}</dd>
-              </div>
-              <div>
-                <dt>Price</dt>
-                <dd>{{ formatPrice(course.price) }}</dd>
-              </div>
-            </dl>
-          </article>
-        </div>
-        <p v-else class="no-courses">No courses match your search and filters.</p>
+        </form>
       </section>
-    </section>
+
+      <section v-else-if="page === 'success'" class="checkout-panel success-panel">
+        <div class="success-icon"><i class="fa-solid fa-circle-check" aria-hidden="true"></i></div>
+        <p class="eyebrow">YOU’RE ALL SET</p>
+        <h1>Let the learning begin.</h1>
+        <p>Thanks, {{ lastOrder.userName }}. Your place is booked and your next chapter starts now.</p>
+        <ul class="success-lessons">
+          <li v-for="lesson in lastOrder.lessons" :key="lesson.id">
+            <span class="success-check"><i class="fa-solid fa-check" aria-hidden="true"></i></span>
+            <span>{{ lesson.title }}<small>{{ lesson.remainingSeats }} seats remaining</small></span>
+          </li>
+        </ul>
+        <button class="button button-primary" type="button" @click="goHome">Explore more classes <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></button>
+      </section>
+    </main>
+    <footer class="site-footer">
+      <a class="brand footer-brand" href="#" @click.prevent="goHome"><span class="brand-mark"><i class="fa-solid fa-shapes" aria-hidden="true"></i></span><span>AftaClass<span class="brand-period">.</span></span></a>
+      <span>Keep learning. Keep growing.</span>
+    </footer>
   </div>
-  <script>
-    const { createApp } = Vue;
-
-    createApp({
-      data() {
-        return {
-          courses: window.courseData,
-          searchQuery: "",
-          selectedSubject: "",
-          maxPrice: 100
-        };
-      },
-      computed: {
-        filteredCourses() {
-          const query = this.searchQuery.trim().toLowerCase();
-
-          return this.courses.filter((course) => {
-            const matchesSubject =
-              !this.selectedSubject || course.subject === this.selectedSubject;
-            const matchesPrice = course.price <= this.maxPrice;
-            const searchableDetails =
-              `${course.title} ${course.subject} ${course.description} ${course.instructor}`.toLowerCase();
-            const matchesQuery = !query || searchableDetails.includes(query);
-
-            return matchesSubject && matchesPrice && matchesQuery;
-          });
-        }
-      },
-      methods: {
-        formatPrice(amount) {
-          return new Intl.NumberFormat("en-MU", {
-            style: "currency",
-            currency: "MUR",
-            maximumFractionDigits: 0
-          }).format(amount);
-        }
-      },
-      watch: {}
-    }).mount("#app");
-  </script>
 </body>
 </html>
