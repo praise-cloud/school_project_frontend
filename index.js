@@ -1,7 +1,10 @@
 const { createApp } = Vue
+const isLocalHost = ['localhost', '127.0.0.1'].includes(window.location.hostname)
 const API_BASE_URL = window.location.port === '3002'
   ? '/api'
-  : 'http://127.0.0.1:3002/api'
+  : isLocalHost
+    ? 'http://127.0.0.1:3002/api'
+    : 'https://school-project-backend-xlih.onrender.com/api'
 
 function getCartId() {
   let cartId = localStorage.getItem('aftaclass-cart-id')
@@ -47,7 +50,7 @@ createApp({
         const matchesSubject = !this.selectedSubject || lesson.subject === this.selectedSubject
         const matchesPrice = lesson.price <= this.maxPrice
         const searchableDetails =
-          `${lesson.title} ${lesson.subject} ${lesson.description} ${lesson.instructor}`.toLowerCase()
+          `${lesson.title} ${lesson.subject} ${lesson.location} ${lesson.description} ${lesson.instructor}`.toLowerCase()
 
         return matchesSubject && matchesPrice && (!query || searchableDetails.includes(query))
       }).sort((first, second) => {
@@ -62,8 +65,11 @@ createApp({
         return comparison * direction || first.id - second.id
       })
     },
+    cartSeatCount() {
+      return this.cartItems.reduce((total, lesson) => total + lesson.quantity, 0)
+    },
     cartTotal() {
-      return this.cartItems.reduce((total, lesson) => total + lesson.price, 0)
+      return this.cartItems.reduce((total, lesson) => total + lesson.price * lesson.quantity, 0)
     }
   },
   async mounted() {
@@ -160,6 +166,10 @@ createApp({
     },
     isInCart(lessonId) {
       return this.cartItems.some((lesson) => lesson.id === lessonId)
+    },
+    remainingSeats(lesson) {
+      const cartItem = this.cartItems.find((item) => item.id === lesson.id)
+      return Math.max(lesson.availableSeats - (cartItem ? cartItem.quantity : 0), 0)
     },
     formatPrice(amount) {
       return new Intl.NumberFormat('en-MU', {
