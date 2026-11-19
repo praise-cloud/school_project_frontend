@@ -26,6 +26,8 @@ createApp({
       searchQuery: '',
       selectedSubject: '',
       maxPrice: 100,
+      sortBy: 'subject',
+      sortDirection: 'asc',
       userName: '',
       lastOrder: { userName: '', lessons: [] },
       loading: true,
@@ -39,6 +41,7 @@ createApp({
     },
     filteredLessons() {
       const query = this.searchQuery.trim().toLowerCase()
+      const direction = this.sortDirection === 'asc' ? 1 : -1
 
       return this.lessons.filter((lesson) => {
         const matchesSubject = !this.selectedSubject || lesson.subject === this.selectedSubject
@@ -47,6 +50,16 @@ createApp({
           `${lesson.title} ${lesson.subject} ${lesson.description} ${lesson.instructor}`.toLowerCase()
 
         return matchesSubject && matchesPrice && (!query || searchableDetails.includes(query))
+      }).sort((first, second) => {
+        const firstValue = first[this.sortBy]
+        const secondValue = second[this.sortBy]
+        const comparison = this.sortBy === 'price' || this.sortBy === 'availableSeats'
+          ? Number(firstValue) - Number(secondValue)
+          : String(firstValue || '').localeCompare(String(secondValue || ''), undefined, {
+            sensitivity: 'base'
+          })
+
+        return comparison * direction || first.id - second.id
       })
     },
     cartTotal() {

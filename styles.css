@@ -465,7 +465,7 @@ h3 {
 
 .course-toolbar {
   display: grid;
-  grid-template-columns: minmax(220px, 1fr) minmax(170px, 0.38fr) minmax(170px, 0.38fr);
+  grid-template-columns: minmax(220px, 1fr) repeat(4, minmax(130px, 0.38fr));
   gap: 13px;
   padding: 16px;
   border: 1px solid var(--line);

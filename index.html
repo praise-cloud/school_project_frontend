@@ -100,6 +100,22 @@
                 <option :value="50">Up to {{ formatPrice(50) }}</option>
               </select>
             </div>
+            <div class="course-filter">
+              <label for="sort-by">Sort lessons by</label>
+              <select id="sort-by" v-model="sortBy">
+                <option value="subject">Subject</option>
+                <option value="location">Location</option>
+                <option value="price">Price</option>
+                <option value="availableSeats">Spaces</option>
+              </select>
+            </div>
+            <div class="course-filter">
+              <label for="sort-direction">Sort order</label>
+              <select id="sort-direction" v-model="sortDirection">
+                <option value="asc">Ascending</option>
+                <option value="desc">Descending</option>
+              </select>
+            </div>
           </form>
 
           <section class="course-results" aria-labelledby="course-results-title">
@@ -133,6 +149,7 @@
                 <p class="course-description">{{ lesson.description }}</p>
                 <div class="course-meta">
                   <span><i class="fa-regular fa-user" aria-hidden="true"></i> {{ lesson.instructor }}</span>
+                  <span><i class="fa-solid fa-location-dot" aria-hidden="true"></i> {{ lesson.location }}</span>
                   <span><i class="fa-regular fa-clock" aria-hidden="true"></i> {{ lesson.duration }}</span>
                 </div>
                 <div class="card-footer">
