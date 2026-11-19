@@ -16,7 +16,7 @@ The frontend has no bundler or package install step. Start the backend with Mong
 
 ## GitHub Pages deployment
 
-The workflow in `.github/workflows/deploy-pages.yml` publishes this repository's root on pushes to `main`. In **Settings → Pages**, set the source to **GitHub Actions**. The project Pages URL is listed above.
+In the frontend repository, open **Settings → Pages** and choose **Deploy from a branch**. Select branch `main` and folder `/(root)`, then save. The frontend files, including `index.html`, are at this repository's root, so do not select `/frontend`. Push changes to `main` to publish them. The project Pages URL is listed above.
 
 ## AI-use acknowledgment
 
