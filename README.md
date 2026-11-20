@@ -6,7 +6,7 @@ The AftaClass frontend is a Vue 3 single-page app for browsing after-school less
 
 - **GitHub repository:** <https://github.com/praise-cloud/school_project_frontend>
 - **GitHub Pages:** <https://praise-cloud.github.io/school_project_frontend/>
-- **Backend API:** <https://school-project-backend-xlih.onrender.com/api/lessons>
+- **Backend API:** <https://school-project-backend-1.onrender.com/api/lessons>
 
 The API base URL is public browser configuration in `index.js`; it is not a secret and cannot be loaded from the backend's `.env` file by a static GitHub Pages site.
 
