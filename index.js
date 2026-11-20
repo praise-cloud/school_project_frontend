@@ -32,6 +32,8 @@ createApp({
       sortBy: 'subject',
       sortDirection: 'asc',
       userName: '',
+      userPhone: '',
+      userEmail: '',
       lastOrder: { userName: '', lessons: [] },
       loading: true,
       checkingOut: false,
@@ -70,6 +72,12 @@ createApp({
     },
     cartTotal() {
       return this.cartItems.reduce((total, lesson) => total + lesson.price * lesson.quantity, 0)
+    },
+    isCheckoutValid() {
+      const hasName = this.userName.trim().length > 0
+      const hasValidPhone = /^\d+$/.test(this.userPhone.trim())
+      const hasItems = this.cartItems.length > 0
+      return hasName && hasValidPhone && hasItems
     }
   },
   async mounted() {
@@ -141,14 +149,32 @@ createApp({
       await this.loadCart()
       this.page = 'cart'
     },
+    onPhoneInput(e) {
+      this.userPhone = e.target.value.replace(/\D/g, '')
+    },
     async checkout() {
       this.errorMessage = ''
+
+      if (!this.userName.trim()) {
+        this.errorMessage = 'Please enter your name.'
+        return
+      }
+
+      if (!/^\d+$/.test(this.userPhone.trim())) {
+        this.errorMessage = 'Phone number must only contain numbers.'
+        return
+      }
+
       this.checkingOut = true
 
       try {
         const order = await this.request(`/api/checkout/${encodeURIComponent(this.cartId)}`, {
           method: 'POST',
-          body: JSON.stringify({ userName: this.userName })
+          body: JSON.stringify({
+            name: this.userName.trim(),
+            phone: this.userPhone.trim(),
+            email: this.userEmail.trim()
+          })
         })
         this.lastOrder = order
         this.cartItems = []
