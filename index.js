@@ -74,10 +74,10 @@ createApp({
       return this.cartItems.reduce((total, lesson) => total + lesson.price * lesson.quantity, 0)
     },
     isCheckoutValid() {
-      const hasName = this.userName.trim().length > 0
-      const hasValidPhone = /^\d+$/.test(this.userPhone.trim())
+      const isNameValid = /^[a-zA-Z\s]+$/.test(this.userName.trim())
+      const isPhoneValid = /^\d+$/.test(this.userPhone.trim())
       const hasItems = this.cartItems.length > 0
-      return hasName && hasValidPhone && hasItems
+      return isNameValid && isPhoneValid && hasItems
     }
   },
   async mounted() {
@@ -149,39 +149,103 @@ createApp({
       await this.loadCart()
       this.page = 'cart'
     },
+    onNameInput(e) {
+      this.userName = e.target.value.replace(/[^a-zA-Z\s]/g, '')
+    },
     onPhoneInput(e) {
       this.userPhone = e.target.value.replace(/\D/g, '')
+    },
+    onSearchInput() {
+      clearTimeout(this.searchTimeout)
+      this.searchTimeout = setTimeout(async () => {
+        const query = this.searchQuery.trim()
+        if (!query) {
+          await this.loadLessons()
+          return
+        }
+        this.loading = true
+        try {
+          this.lessons = await this.request(`/search?q=${encodeURIComponent(query)}`)
+        } catch (err) {
+          this.errorMessage = err.message
+        } finally {
+          this.loading = false
+        }
+      }, 300)
     },
     async checkout() {
       this.errorMessage = ''
 
-      if (!this.userName.trim()) {
-        this.errorMessage = 'Please enter your name.'
+      if (!this.userName.trim() || !/^[a-zA-Z\s]+$/.test(this.userName.trim())) {
+        this.errorMessage = 'Name is required and must contain letters only.'
         return
       }
 
-      if (!/^\d+$/.test(this.userPhone.trim())) {
-        this.errorMessage = 'Phone number must only contain numbers.'
+      if (!this.userPhone.trim() || !/^\d+$/.test(this.userPhone.trim())) {
+        this.errorMessage = 'Phone number is required and must contain numbers only.'
+        return
+      }
+
+      if (!this.cartItems.length) {
+        this.errorMessage = 'Your cart is empty.'
         return
       }
 
       this.checkingOut = true
 
       try {
-        const order = await this.request(`/api/checkout/${encodeURIComponent(this.cartId)}`, {
+        // 1. POST fetch: Save new order to MongoDB 'orders' collection
+        const order = await this.request('/orders', {
           method: 'POST',
           body: JSON.stringify({
             name: this.userName.trim(),
             phone: this.userPhone.trim(),
-            email: this.userEmail.trim()
+            email: this.userEmail.trim(),
+            lessons: this.cartItems.map((l) => ({
+              id: l.id,
+              title: l.title,
+              price: l.price,
+              quantity: l.quantity
+            })),
+            space: this.cartSeatCount,
+            totalPrice: this.cartTotal
           })
         })
-        this.lastOrder = order
+
+        // 2. PUT fetch: Update available lesson spaces in MongoDB for each booked lesson
+        for (const item of this.cartItems) {
+          const newSpace = Math.max(item.availableSeats - item.quantity, 0)
+          await this.request(`/lessons/${item.id}`, {
+            method: 'PUT',
+            body: JSON.stringify({ availableSeats: newSpace })
+          })
+          const lesson = this.lessons.find((l) => l.id === item.id)
+          if (lesson) lesson.availableSeats = newSpace
+        }
+
+        this.lastOrder = {
+          userName: this.userName.trim(),
+          lessons: this.cartItems.map((item) => ({
+            ...item,
+            remainingSeats: Math.max(item.availableSeats - item.quantity, 0)
+          }))
+        }
+
+        // 3. Clear cart
+        try {
+          await this.request(`/api/checkout/${encodeURIComponent(this.cartId)}`, {
+            method: 'POST',
+            body: JSON.stringify({
+              name: this.userName.trim(),
+              phone: this.userPhone.trim(),
+              email: this.userEmail.trim()
+            })
+          })
+        } catch (e) {
+          // In case in-memory cart was already synced
+        }
         this.cartItems = []
-        order.lessons.forEach((bookedLesson) => {
-          const lesson = this.lessons.find((item) => item.id === bookedLesson.id)
-          if (lesson) lesson.availableSeats = bookedLesson.remainingSeats
-        })
+
         this.page = 'success'
       } catch (error) {
         this.errorMessage = error.message
