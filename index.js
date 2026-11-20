@@ -4,7 +4,7 @@ const API_BASE_URL = window.location.port === '3002'
   ? '/api'
   : isLocalHost
     ? 'http://127.0.0.1:3002/api'
-    : 'https://school-project-backend-xlih.onrender.com/api'
+    : 'https://school-project-backend-1.onrender.com/api'
 
 function getCartId() {
   let cartId = localStorage.getItem('aftaclass-cart-id')
